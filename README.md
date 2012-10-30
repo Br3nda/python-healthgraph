@@ -1,4 +1,4 @@
-runkeeper
+Health Graph
 =========
 
-python api to runkeeper
+Python api to runkeeper's "Health Graph" 
