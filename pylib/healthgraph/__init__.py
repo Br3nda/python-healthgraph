@@ -9,6 +9,7 @@ dbconn = sqlite3.connect('auth.db')
 
 cur = dbconn.cursor()    
 cur.execute("CREATE TABLE IF NOT EXISTS tokens(access_token string)")
+dbconn.commit()
 
 class User:
 	def auth_url(self):
@@ -24,6 +25,8 @@ class User:
 	def save_access_token(self, token):
 		logging.info("Saving code: %s"%(token))
 		cur.execute('INSERT INTO tokens (access_token) VALUES(?)', (token,))
+		dbconn.commit()
+		
 		
 	def auth(self,code):
 		#Make a POST request to the Health Graph API token endpoint.
@@ -54,5 +57,38 @@ class User:
 		self.access_token = self._auth_data['access_token']
 		#save into our db
 		self.save_access_token(self.access_token)
+	
+	@property
+	def token(self):
+		cur = dbconn.cursor()    
+		cur.execute("SELECT * FROM tokens")
+
+		rows = cur.fetchall()
+
+		return rows[0][0]
+			
+	_url = 'https://api.runkeeper.com/user/'
+	def get_user_details(self):
+		"""
+		GET /user HTTP/1.1
+		Host: api.runkeeper.com
+		Authorization: Bearer xxxxxxxxxxxxxxxx
+		Accept: application/vnd.com.runkeeper.User+json
+		"""
+		#values = {'code' : code,
+				  #'grant_type': 'authorization_code',
+				  #'client_id' : client_id,
+				  #'client_secret' : client_secret,
+				  #'redirect_uri': 'http://br3nda.com' }
+		#data = urllib.urlencode(values)
+		headers = {
+			'Authorization': 'Bearer %s'%(self.token),
+			'Accept': 'application/vnd.com.runkeeper.User+json'
+			}
+		req = urllib2.Request(self._url, headers=headers)
+		response = urllib2.urlopen(req)
+
+		#parse from json
+		self.user_data = json.loads(response.read())
 		
 		
