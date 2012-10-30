@@ -18,7 +18,7 @@ class User:
 			'response_type': 'code',
 			'redirect_uri': 'http://br3nda.com'})
 		
-		print "Go to this url: \n"+url
+		return url
 		
 		
 	def save_access_token(self, token):
