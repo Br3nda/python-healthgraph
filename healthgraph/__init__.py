@@ -5,7 +5,7 @@ import json
 import urllib2
 		
 #database connection
-dbconn = sqlite3.connect('auth.db')
+dbconn = sqlite3.connect('healthgraphauth.db')
 
 cur = dbconn.cursor()    
 cur.execute("CREATE TABLE IF NOT EXISTS tokens(access_token string)")
