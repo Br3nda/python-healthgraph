@@ -12,4 +12,4 @@ Step 2) run bin/auth_step_two.py <code>
 	This will be used to finish authorisation, and token will be saved into a local sqlite database
 
 Step 3) run bin/demo.py
-	This will retrieve User data. All other methods should work now that auth is complete
+	All other methods should work now that auth is complete. Running demo.py to check this.
