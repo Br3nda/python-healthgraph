@@ -11,21 +11,23 @@ cur = dbconn.cursor()
 cur.execute("CREATE TABLE IF NOT EXISTS tokens(access_token string)")
 dbconn.commit()
 
+def auth_url():
+	from _config import auth_url, client_id
+	url = auth_url + '?' + urllib.urlencode({
+		'client_id': client_id,
+		'response_type': 'code',
+		'redirect_uri': 'http://br3nda.com'})
+	return url
+	
 class User:
-	def auth_url(self):
-		from _config import auth_url, client_id
-		url = auth_url + '?' + urllib.urlencode({
-			'client_id': client_id,
-			'response_type': 'code',
-			'redirect_uri': 'http://br3nda.com'})
-		
-		return url
-		
+	def __init__(self):
+		self._token = ''
 		
 	def save_access_token(self, token):
 		logging.info("Saving code: %s"%(token))
 		cur.execute('INSERT INTO tokens (access_token) VALUES(?)', (token,))
 		dbconn.commit()
+		
 		
 		
 	def auth(self,code):
@@ -60,12 +62,16 @@ class User:
 	
 	@property
 	def token(self):
-		cur = dbconn.cursor()    
-		cur.execute("SELECT * FROM tokens")
+		if not self._token:
+			cur = dbconn.cursor()    
+			cur.execute("SELECT * FROM tokens")
 
-		rows = cur.fetchall()
+			rows = cur.fetchall()
 
-		return rows[0][0]
+			self._token = rows[0][0]
+			
+		assert self._token
+		return self._token
 			
 	_url = 'https://api.runkeeper.com/user/'
 	def get_user_details(self):
@@ -92,3 +98,6 @@ class User:
 		self.user_data = json.loads(response.read())
 		
 		
+
+class Activity:
+	pass
