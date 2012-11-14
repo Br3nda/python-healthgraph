@@ -2,4 +2,4 @@
 *.pyc
 _config.py
 .pythoscope
-auth.db
+healthgraphauth.db
