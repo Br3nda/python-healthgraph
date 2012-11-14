@@ -14,5 +14,6 @@ logger.info('adfds')
 
 user = User()
 
-print user.user_details()['userID']
+#print user.user_details()['userID']
+print user.fitness_activities()
 

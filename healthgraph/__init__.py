@@ -81,10 +81,10 @@ class User:
 	_url = 'https://api.runkeeper.com'
 
 		
-	def request(self, path=''):
+	def request(self, datatype, path='', ):
 		headers = {
 			'Authorization': 'Bearer %s'%(self.token),
-			'Accept': 'application/vnd.com.runkeeper.User+json'
+			'Accept': datatype,
 			}
 		print "\tRequest = %s"%(headers)
 		
@@ -101,7 +101,7 @@ class User:
 		if self.user_data:
 			return self.user_data
 			
-		self.user_data = self.request(path='/user')
+		self.user_data = self.request(datatype='application/vnd.com.runkeeper.User+json', path='/user')
 		return self.user_data
 		
 	def profile(self):
@@ -115,7 +115,8 @@ class User:
 		
 	def fitness_activities(self):
 		path = self.user_details()['fitness_activities']
-		return self.request(path)
+		datatype='application/vnd.com.runkeeper.FitnessActivityFeed+json'
+		return self.request(path=path, datatype=datatype)
 		
 
 class Activity:
