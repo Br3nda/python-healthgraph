@@ -1,6 +1,4 @@
-from healthgraph import User
-
-user = User()
+from healthgraph import auth_url
 print "To begin auth, go to:"
-print user.auth_url()
+print auth_url()
 
