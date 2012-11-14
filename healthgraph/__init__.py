@@ -3,13 +3,16 @@ import urllib
 import logging
 import json
 import urllib2
+
+logger = logging.getLogger('healthgraph')
 		
 #database connection
 dbconn = sqlite3.connect('healthgraphauth.db')
 
-cur = dbconn.cursor()    
+cur = dbconn.cursor()
 cur.execute("CREATE TABLE IF NOT EXISTS tokens(access_token string)")
 dbconn.commit()
+
 
 def auth_url():
 	from _config import auth_url, client_id
@@ -21,11 +24,12 @@ def auth_url():
 	
 class User:
 	def __init__(self):
-		self._token = ''
+		self._token = None
+		self.user_data = None
 		
 	def save_access_token(self, token):
-		logging.info("Saving code: %s"%(token))
-		cur.execute('INSERT INTO tokens (access_token) VALUES(?)', (token,))
+		print "Saving code: %s"%(token)
+		cur.execute('INSERT INTO tokens (access_token) VALUES(?)', (token, ))
 		dbconn.commit()
 		
 		
@@ -46,6 +50,7 @@ class User:
 				  'client_id' : client_id,
 				  'client_secret' : client_secret,
 				  'redirect_uri': 'http://br3nda.com' }
+		logger.info("Auth request = %s"%(values))
 		data = urllib.urlencode(values)
 		headers = {'content-type': ' application/x-www-form-urlencoded'}
 		req = urllib2.Request(access_token_url, data, headers)
@@ -56,9 +61,9 @@ class User:
 		#parse from json
 		self._auth_data = json.loads(self._auth_response)
 		#get the token
-		self.access_token = self._auth_data['access_token']
+		self._token = self._auth_data['access_token']
 		#save into our db
-		self.save_access_token(self.access_token)
+		self.save_access_token(self._token)
 	
 	@property
 	def token(self):
@@ -73,30 +78,44 @@ class User:
 		assert self._token
 		return self._token
 			
-	_url = 'https://api.runkeeper.com/user/'
-	def get_user_details(self):
-		"""
-		GET /user HTTP/1.1
-		Host: api.runkeeper.com
-		Authorization: Bearer xxxxxxxxxxxxxxxx
-		Accept: application/vnd.com.runkeeper.User+json
-		"""
-		#values = {'code' : code,
-				  #'grant_type': 'authorization_code',
-				  #'client_id' : client_id,
-				  #'client_secret' : client_secret,
-				  #'redirect_uri': 'http://br3nda.com' }
-		#data = urllib.urlencode(values)
+	_url = 'https://api.runkeeper.com'
+
+		
+	def request(self, path=''):
 		headers = {
 			'Authorization': 'Bearer %s'%(self.token),
 			'Accept': 'application/vnd.com.runkeeper.User+json'
 			}
-		req = urllib2.Request(self._url, headers=headers)
+		print "\tRequest = %s"%(headers)
+		
+		url = self._url + path
+		print "\tURL = %s"%(url)
+		req = urllib2.Request(url, headers=headers)
 		response = urllib2.urlopen(req)
 
 		#parse from json
-		self.user_data = json.loads(response.read())
+		return json.loads(response.read())
+
+	def user_details(self):
+		#if we already have this, don't refetch
+		if self.user_data:
+			return self.user_data
+			
+		self.user_data = self.request(path='/user')
+		return self.user_data
 		
+	def profile(self):
+		pass
+	def nutrition(self):
+		pass
+		
+	def weight(self):
+		path = self.user_details()['weight']
+		return self.request(path)
+		
+	def fitness_activities(self):
+		path = self.user_details()['fitness_activities']
+		return self.request(path)
 		
 
 class Activity:
