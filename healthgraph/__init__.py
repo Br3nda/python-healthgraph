@@ -3,6 +3,7 @@ import urllib
 import logging
 import json
 import urllib2
+import re
 
 logger = logging.getLogger('healthgraph')
 		
@@ -21,11 +22,36 @@ def auth_url():
 		'response_type': 'code',
 		'redirect_uri': 'http://br3nda.com'})
 	return url
-	
+
+def add_remote_method(cls, name):
+	def callback():
+		print "Inside callback %s()"%(name, )
+		#print cls
+		return cls._remote_method(remotemethod=name)
+
+	callback.__doc__ = "docscript for %s" % name
+	callback.__name__ = str(name)
+	setattr(cls, callback.__name__, callback)
+
+
 class User:
 	def __init__(self):
 		self._token = None
-		self.user_data = None
+		self._user = None
+		self._remote_methods = []
+		whitelist = re.compile('^[a-zA-Z_]+$')
+		#print "Fetching user details"
+		self._user = self.request(datatype='application/vnd.com.runkeeper.User+json', path='/user')
+		for name in self._user:
+			path = self._user[name]
+			print "{name} -> {path}".format(name=name, path=path)
+			self._remote_methods.append(name)
+
+			if not whitelist.match(name):
+				raise ValueError("Dodgy method name: {name}".format(name=name))
+
+			add_remote_method(self, name)
+			
 		
 	def save_access_token(self, token):
 		print "Saving code: %s"%(token)
@@ -33,8 +59,7 @@ class User:
 		dbconn.commit()
 		
 		
-		
-	def auth(self,code):
+	def auth(self, code):
 		#Make a POST request to the Health Graph API token endpoint.
 		# nclude the following parameters in application/x-www-form-urlencoded format:
 
@@ -86,38 +111,18 @@ class User:
 			'Authorization': 'Bearer %s'%(self.token),
 			'Accept': datatype,
 			}
-		print "\tRequest = %s"%(headers)
+		#print "\tRequest = %s"%(headers)
 		
 		url = self._url + path
-		print "\tURL = %s"%(url)
+		#print "\tURL = %s"%(url)
 		req = urllib2.Request(url, headers=headers)
 		response = urllib2.urlopen(req)
 
 		#parse from json
 		return json.loads(response.read())
 
-	def user_details(self):
-		#if we already have this, don't refetch
-		if self.user_data:
-			return self.user_data
-			
-		self.user_data = self.request(datatype='application/vnd.com.runkeeper.User+json', path='/user')
-		return self.user_data
-		
-	def profile(self):
-		pass
-	def nutrition(self):
-		pass
-		
-	def weight(self):
-		path = self.user_details()['weight']
-		return self.request(path)
-		
-	def fitness_activities(self):
-		path = self.user_details()['fitness_activities']
+	def _remote_method(self, remotemethod):
+		path = self._user[remotemethod]
 		datatype='application/vnd.com.runkeeper.FitnessActivityFeed+json'
 		return self.request(path=path, datatype=datatype)
 		
-
-class Activity:
-	pass
